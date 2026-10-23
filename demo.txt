@@ -1,0 +1,139 @@
+                              INTERNET
+                                 |
+                          [ External Users ]
+                                 |
+                     +------------------------+
+                     | Internet Gateway (IGW) |
+                     | Connects VPC to        |
+                     | the Internet           |
+                     +------------------------+
+                                 |
+    ========================= AWS VPC =========================
+    |                     CIDR: 10.0.0.0/16                    |
+    |                                                          |
+    |  PUBLIC SUBNET A                 PUBLIC SUBNET B         |
+    |  10.0.1.0/24                     10.0.2.0/24             |
+    |  AZ-a                            AZ-b                    |
+    |                                                          |
+    |  +-------------------+          +-------------------+    |
+    |  | Route Table       |          | Route Table       |    |
+    |  | 10.0.0.0/16 local |          | 10.0.0.0/16 local |    |
+    |  | 0.0.0.0/0 -> IGW  |          | 0.0.0.0/0 -> IGW  |    |
+    |  +-------------------+          +-------------------+    |
+    |             |                            |               |
+    |             [ Public ALB / Load Balancer ]               |
+    |                          |                               |
+    |--------------------------|-----------------------------  |
+    |                          |                               |
+    |  PRIVATE APP SUBNET A            PRIVATE APP SUBNET B    |
+    |  10.0.11.0/24                    10.0.12.0/24            |
+    |  AZ-a                            AZ-b                    |
+    |                                                          |
+    |  +-------------------+          +-------------------+    |
+    |  | NACL              |          | NACL              |    |
+    |  | Subnet security   |          | Subnet security   |    |`
+    |  +-------------------+          +-------------------+    |
+    |             |                            |               |
+    |       +-----------+                +-----------+         |
+    |       | EC2 / App |                | EC2 / App |         |
+    |       | SG        |                | SG        |         |
+    |       +-----------+                +-----------+         |
+    |             |                            |               |
+    |             +-------------+--------------+               |
+    |                           |                              |
+    |                    [ NAT Gateway ]                       |
+    |                    Public subnet                         |
+    |                           |                              |
+    |                          IGW                             |
+    |                           |                              |
+    |                        INTERNET                          |
+    |                                                          |
+    |----------------------|---------------------------------- |
+    |                      |                                   |
+    |  PRIVATE DATABASE SUBNETS                                |
+    |  10.0.21.0/24                    10.0.22.0/24            |
+    |  AZ-a                            AZ-b                    |
+    |                                                          |
+    |             +--------------------+                       |
+    |             | RDS Database       |                       |
+    |             | Private access     |                       |
+    |             | Database SG        |                       |
+    |             +--------------------+                       |
+    |                                                          |
+    ===========================================================
+
+
+
+                    AWS VPC
+        ___________________________________
+       |                                   |
+       |   PRIVATE APP SUBNET              |
+       |                                   |
+       |   +----------------------+        |
+       |   | EC2 Instance         |        |
+       |   | Application          |        |
+       |   | Private IP:          |        |
+       |   | 10.0.11.10            |        |
+       |   +----------------------+        |
+       |              |                    |
+       |              | DB request         |
+       |              | TCP port 5432      |
+       |              v                    |
+       |   PRIVATE DATABASE SUBNET         |
+       |                                   |
+       |   +----------------------+        |
+       |   | RDS PostgreSQL       |        |
+       |   | Private IP / Endpoint|        |
+       |   | DB Security Group    |        |
+       |   +----------------------+        |
+       |___________________________________|
+
+
+    Users
+    |
+    Load Balancer
+    |
+    +---- EC2-A (Application)
+    |
+    +---- EC2-B (Application)
+                |
+                v
+        RDS (Database)
+                |
+        Stores data
+
+    EC2 Application -----> S3 (Images, files)
+
+
+RDS = organized records in database tables.
+S3 = files stored as objects inside buckets.
+
+
+Private App Subnet                  Private DB Subnet
+┌──────────────────┐              ┌──────────────────┐
+│                  │              │                  │
+│   EC2 App        │ ───────────► │   RDS Database   │
+│   SG checks      │              │   SG checks      │
+│                  │              │                  │
+└────────┬─────────┘              └────────┬─────────┘
+         │                                 │
+     App NACL                          DB NACL
+   Subnet boundary                  Subnet boundary
+
+
+6 addr always reserved
+
+.0 → Network address
+.1 → VPC router
+.2 → Amazon-provided DNS
+.3 → Reserved for future use
+.255 → Reserved for broadcast addressing by AWS
+
+
+Common Security Group ports
+Port	Purpose
+22	SSH — Linux server administration
+80	HTTP website
+443	HTTPS secure website
+3306	MySQL database
+5432	PostgreSQL database
